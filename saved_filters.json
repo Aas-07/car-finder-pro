@@ -1,0 +1,16 @@
+{
+  "keywords": "",
+  "make": "",
+  "model": "",
+  "year_from": 2005,
+  "year_to": 2018,
+  "engine_min": 0.9,
+  "engine_max": 2.5,
+  "fuel": "Petrol",
+  "transmission": "Manual",
+  "max_price": 2000,
+  "max_miles": 100000,
+  "postcode": "London",
+  "radius": 50,
+  "condition": "Any"
+}
