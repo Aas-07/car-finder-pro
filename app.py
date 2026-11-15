@@ -12,14 +12,14 @@ DEFAULTS = {
     "keywords": "",
     "make": "",
     "model": "",
-    "year_from": 2005,
-    "year_to": 2018,
-    "engine_min": 0.9,
-    "engine_max": 2.5,
-    "fuel": "Petrol",
-    "transmission": "Manual",
+    "year_from": 2000,
+    "year_to": date.today().year,
+    "engine_min": 0.0,
+    "engine_max": 0.0,
+    "fuel": "Any",
+    "transmission": "Any",
     "max_price": 2000,
-    "max_miles": 100000,
+    "max_miles": 0,
     "postcode": "London",
     "radius": 50,
     "condition": "Any",
@@ -44,17 +44,13 @@ def clean(value):
     return str(value or "").strip()
 
 def build_query(f):
+    # Keep the free-text search genuinely optional. Structured filters are shown
+    # separately and are not stuffed into the search phrase.
     bits = []
     for key in ("make", "model", "keywords"):
         if clean(f.get(key)):
             bits.append(clean(f[key]))
-    if f.get("fuel") and f["fuel"] != "Any":
-        bits.append(f["fuel"])
-    if f.get("transmission") and f["transmission"] != "Any":
-        bits.append(f["transmission"])
-    if f.get("engine_min") and f.get("engine_max"):
-        bits.append(f'{f["engine_min"]:.1f}L-{f["engine_max"]:.1f}L')
-    return " ".join(bits) or "used cars"
+    return " ".join(bits)
 
 def ebay_url(f):
     q = urllib.parse.quote_plus(build_query(f))
@@ -88,29 +84,30 @@ st.caption("Flexible marketplace searches, saved filters, deal calculator and a 
 saved = load_saved()
 settings = {**DEFAULTS, **saved}
 
-with st.sidebar:
-    st.header("1. Search filters")
-    st.caption("Leave a field blank or choose Any when you don't want to restrict it.")
-    make = st.text_input("Make", value=settings["make"], placeholder="e.g. Toyota")
-    model = st.text_input("Model", value=settings["model"], placeholder="e.g. Auris")
-    keywords = st.text_input("Extra keywords", value=settings["keywords"], placeholder="e.g. 1.6 VVT-i, full history")
-    a, b = st.columns(2)
-    with a:
-        year_from = st.number_input("Year from", min_value=1980, max_value= date.today().year + 1, value=int(settings["year_from"]), step=1)
-    with b:
-        year_to = st.number_input("Year to", min_value=1980, max_value=date.today().year + 1, value=int(settings["year_to"]), step=1)
-    a, b = st.columns(2)
-    with a:
-        engine_min = st.number_input("Engine min (L)", min_value=0.0, max_value=10.0, value=float(settings["engine_min"]), step=0.1, format="%.1f")
-    with b:
-        engine_max = st.number_input("Engine max (L)", min_value=0.0, max_value=10.0, value=float(settings["engine_max"]), step=0.1, format="%.1f")
-    fuel = st.selectbox("Fuel", FUEL_OPTIONS, index=FUEL_OPTIONS.index(settings["fuel"]) if settings["fuel"] in FUEL_OPTIONS else 0)
-    transmission = st.selectbox("Transmission", GEARBOX_OPTIONS, index=GEARBOX_OPTIONS.index(settings["transmission"]) if settings["transmission"] in GEARBOX_OPTIONS else 0)
-    condition = st.selectbox("Condition", CONDITION_OPTIONS, index=CONDITION_OPTIONS.index(settings["condition"]) if settings["condition"] in CONDITION_OPTIONS else 0)
-    max_price = st.number_input("Maximum price (£)", min_value=0, max_value=200000, value=int(settings["max_price"]), step=100)
-    max_miles = st.number_input("Maximum mileage", min_value=0, max_value=500000, value=int(settings["max_miles"]), step=5000)
-    postcode = st.text_input("Search location / town / postcode", value=settings["postcode"])
-    radius = st.selectbox("Radius (miles)", [5, 10, 25, 50, 75, 100, 150, 200], index=[5,10,25,50,75,100,150,200].index(int(settings["radius"])) if int(settings["radius"]) in [5,10,25,50,75,100,150,200] else 3)
+tab_search, tab_deal, tab_risk, tab_alerts = st.tabs(["🔎 Search cars", "🧮 Deal calculator", "🛠️ Vehicle risk check", "🔔 Alerts & Android"])
+
+with tab_search:
+    st.subheader("Edit your search")
+    st.caption("All filters are editable here. Leave optional fields blank or choose Any to avoid restricting results.")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        make = st.text_input("Make", value=str(settings["make"]), placeholder="e.g. Toyota", key="search_make")
+        model = st.text_input("Model", value=str(settings["model"]), placeholder="e.g. Auris", key="search_model")
+        keywords = st.text_input("Search phrase / extra keywords (optional)", value=str(settings["keywords"]), placeholder="Leave blank, or enter e.g. full service history", key="search_keywords")
+        postcode = st.text_input("Location / town / postcode", value=str(settings["postcode"]), placeholder="e.g. London, SW1A 1AA", key="search_location")
+    with c2:
+        max_price = st.number_input("Maximum price (£)", min_value=0, max_value=200000, value=int(settings["max_price"]), step=100, key="search_price")
+        max_miles = st.number_input("Maximum mileage (0 = no limit)", min_value=0, max_value=500000, value=int(settings["max_miles"]), step=5000, key="search_miles")
+        year_from = st.number_input("Year from", min_value=1980, max_value=date.today().year + 1, value=int(settings["year_from"]), step=1, key="search_year_from")
+        year_to = st.number_input("Year to", min_value=1980, max_value=date.today().year + 1, value=int(settings["year_to"]), step=1, key="search_year_to")
+    with c3:
+        engine_min = st.number_input("Engine size min (L, 0 = no min)", min_value=0.0, max_value=10.0, value=float(settings["engine_min"]), step=0.1, format="%.1f", key="search_engine_min")
+        engine_max = st.number_input("Engine size max (L, 0 = no max)", min_value=0.0, max_value=10.0, value=float(settings["engine_max"]), step=0.1, format="%.1f", key="search_engine_max")
+        fuel = st.selectbox("Fuel", FUEL_OPTIONS, index=FUEL_OPTIONS.index(settings["fuel"]) if settings["fuel"] in FUEL_OPTIONS else 0, key="search_fuel")
+        transmission = st.selectbox("Transmission", GEARBOX_OPTIONS, index=GEARBOX_OPTIONS.index(settings["transmission"]) if settings["transmission"] in GEARBOX_OPTIONS else 0, key="search_transmission")
+        condition = st.selectbox("Condition", CONDITION_OPTIONS, index=CONDITION_OPTIONS.index(settings["condition"]) if settings["condition"] in CONDITION_OPTIONS else 0, key="search_condition")
+        radius = st.selectbox("Search radius (miles)", [5, 10, 25, 50, 75, 100, 150, 200], index=[5,10,25,50,75,100,150,200].index(int(settings["radius"])) if int(settings["radius"]) in [5,10,25,50,75,100,150,200] else 3, key="search_radius")
 
     filters = {
         "make": make, "model": model, "keywords": keywords,
@@ -120,40 +117,29 @@ with st.sidebar:
         "max_price": int(max_price), "max_miles": int(max_miles),
         "postcode": postcode, "radius": int(radius),
     }
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("💾 Save filters", use_container_width=True):
+    b1, b2 = st.columns(2)
+    with b1:
+        if st.button("💾 Save these filters", use_container_width=True):
             save_saved(filters)
-            st.success("Saved on this device/server.")
-    with c2:
-        if st.button("↩ Reset", use_container_width=True):
+            st.success("Filters saved. They will load as the defaults next time the app starts (subject to hosted storage limits).")
+    with b2:
+        if st.button("↩ Reset filters", use_container_width=True):
+            for k in ["search_make", "search_model", "search_keywords", "search_location", "search_price", "search_miles", "search_year_from", "search_year_to", "search_engine_min", "search_engine_max", "search_fuel", "search_transmission", "search_condition", "search_radius"]:
+                st.session_state.pop(k, None)
             save_saved(DEFAULTS)
             st.rerun()
 
-tab_search, tab_deal, tab_risk, tab_alerts = st.tabs(["🔎 Search cars", "🧮 Deal calculator", "🛠️ Vehicle risk check", "🔔 Alerts & Android"])
-
-with tab_search:
-    st.subheader("Your search")
-    st.write(f"**Search phrase:** {build_query(filters)}")
-    cols = st.columns(4)
-    cols[0].metric("Max price", pounds(max_price))
-    cols[1].metric("Max mileage", f"{max_miles:,}")
-    cols[2].metric("Year range", f"{year_from}–{year_to}")
-    cols[3].metric("Radius", f"{radius} miles")
-    st.info("Search links open the marketplace. Apply or confirm year, engine size, mileage, location and radius on the marketplace itself: sites do not consistently accept every filter in their URLs.")
+    st.divider()
+    st.subheader("Marketplace search links")
+    query = build_query(filters)
+    st.write("**Search phrase:** " + (query if query else "(blank — no make/model/keyword text entered)"))
+    st.write(f"**Your other filters:** up to {pounds(max_price)} · {max_miles:,} miles" if max_miles else f"**Your other filters:** up to {pounds(max_price)} · mileage unrestricted")
+    st.info("Important: these links can reliably pass the search words and maximum price where the marketplace supports it. Marketplace sites do not consistently accept year, engine size, fuel, gearbox, mileage, condition, location and radius through a link. Those filters are shown above for your reference; check/apply them on the marketplace after it opens. The app does not scrape listings or apply filters inside the marketplace account.")
     s1, s2, s3 = st.columns(3)
     s1.link_button("Search eBay UK", ebay_url(filters), use_container_width=True)
     s2.link_button("Search Gumtree", gumtree_url(filters), use_container_width=True)
     s3.link_button("Search Facebook Marketplace", facebook_url(filters), use_container_width=True)
-    st.markdown("#### Search another model quickly")
-    quick = st.text_input("Temporary search phrase", placeholder="e.g. Honda Civic 1.8 petrol manual")
-    if quick:
-        qf = {**filters, "make": "", "model": quick, "keywords": "",}
-        q1, q2, q3 = st.columns(3)
-        q1.link_button("eBay", ebay_url(qf), use_container_width=True)
-        q2.link_button("Gumtree", gumtree_url(qf), use_container_width=True)
-        q3.link_button("Facebook", facebook_url(qf), use_container_width=True)
-    st.caption("Saved filters are stored in saved_filters.json. On a hosted app, storage may reset when the app is redeployed; keep a backup of your filters.")
+    st.caption("If the search phrase is blank, the app does not insert a default phrase such as ‘Petrol Manual 0.9L-2.5L’. Add a make/model or optional keywords if you want a text search.")
 
 with tab_deal:
     st.subheader("Maximum offer and profit calculator")

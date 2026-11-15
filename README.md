@@ -1,38 +1,37 @@
 # Car Finder Pro
 
-A flexible Streamlit app for searching UK used-car marketplaces and screening potential stock purchases.
+A Streamlit starter dashboard for UK used-car sourcing. It includes editable search filters, marketplace search links, a maximum-offer/profit calculator, and a vehicle-risk worksheet.
 
-## Features
-- Editable make, model, keywords, year range, engine-size range, fuel, gearbox, condition, price, mileage, location and radius filters.
-- Search links for eBay UK, Gumtree and Facebook Marketplace.
-- Save/reset filters locally.
-- Deal calculator: target profit, estimated resale, parts, labour, prep, warranty/after-sales allowance, contingency and other costs; calculates a maximum offer.
-- Vehicle risk worksheet: timing system/history, service history, cold start, smoke, oil/coolant, diagnostic scan, MOT pattern and inspection status.
-- Copyable brief to use with an AI assistant alongside a listing, MOT history and photographs.
-- Android deployment instructions.
+## Files
 
-## Run on Windows, macOS or Linux
-Install Python 3.10+ then in this folder run:
+- `app.py` — the complete app
+- `requirements.txt` — Python dependency
+- `saved_filters.json` — starting filter values
+
+## Run locally
 
 ```bash
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Open the local URL shown in the terminal, usually http://localhost:8501.
+## Deploy/update on Streamlit Community Cloud
 
-## Run on Android (recommended: hosted web app)
-1. Create a GitHub account and a new repository.
-2. Upload `app.py` and `requirements.txt`.
-3. Visit https://share.streamlit.io/ and sign in with GitHub.
-4. Deploy the repository; set the main file to `app.py`.
-5. Open the generated app URL on Android Chrome.
-6. Chrome menu ⋮ → Add to Home screen / Install app.
+1. Download and extract this ZIP.
+2. In your GitHub repository, open each existing file and replace its contents with the matching file from this updated folder. At minimum replace `app.py`; also replace `saved_filters.json` and `README.md` if present. Keep `requirements.txt`.
+3. Commit the changes to the `main` branch.
+4. Open your Streamlit Community Cloud app. It should redeploy automatically. If not, use the app menu to reboot/redeploy.
+5. Refresh the app on your Android phone. The editable filters now appear directly under **Search cars**, not hidden in the sidebar.
 
-The app runs on the hosted server, not locally on the phone. Internet access is required. Keep the repository private if you do not want the source code public, and review the hosting platform's current plan and privacy options.
+## Search limitations
 
-## Marketplace and data limitations
-This app opens search URLs; it does not scrape or automatically import listings. Marketplace sites can change their URL formats and may ignore some URL filters. Confirm year, engine, mileage, location and radius on the marketplace itself. Use each platform's native saved-search/alert feature for new listings. Do not use unofficial scraping or bots that may breach platform terms.
+The app builds marketplace search words from Make, Model and optional extra keywords. The search phrase is blank when these are blank; it no longer inserts a default phrase. It passes the maximum price where supported by the marketplace URL. Marketplace websites do not consistently accept every filter (year, engine size, fuel, transmission, mileage, location and radius) in a search URL. Check and apply those filters on the destination marketplace after opening the link. This app does not scrape or automatically import listings.
 
-## Important
-The risk worksheet is a checklist / triage aid, not a reliability database, mechanical diagnosis, valuation or guarantee. The max-offer calculation is only as accurate as your inputs. Independently verify engine code, timing system and maintenance schedule by VIN and manufacturer data.
+## Notes
+
+- The default maximum price is £2,000; change it in the visible search form.
+- Location defaults to London and can be edited.
+- A mileage value of `0` means no mileage limit.
+- Engine min/max of `0` means no engine-size restriction.
+- Saved settings on hosted free services may not persist through every redeploy or restart; keep your own copy of important settings.
+- The risk worksheet is a checklist, not a mechanical diagnosis or verified engine-reliability database.
